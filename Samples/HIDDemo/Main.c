@@ -86,6 +86,7 @@ static void ProcessCharactersTask(void *UserParameter)
             }
             break;
          case 0x08:
+         case 0x7F:
             /* Backspace has been pressed, so now decrement the number  */
             /* of bytes in the buffer (if there are bytes in the        */
             /* buffer).                                                 */
