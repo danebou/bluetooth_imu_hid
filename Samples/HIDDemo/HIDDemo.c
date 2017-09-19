@@ -199,6 +199,10 @@ static DWord_t             HIDDeviceServerSDPHandle;/* Variable which holds the 
                                                     /* of the HID Device Server SDP    */
                                                     /* Service Record.                 */
 
+static DWord_t             DeviceIDSDPHandle;       /* Variable which holds the Handle */
+                                                    /* of the Device Id SDP Service    */
+                                                    /* Record.                         */
+
 static int                 UI_Mode;                 /* Variable used to indicate if the*/
                                                     /* program is to be run in Host    */
                                                     /* Mode or Device Mode.            */
@@ -282,7 +286,7 @@ static Byte_t MouseReportDescriptor[] =
    /* The following represents a Generic Mouse Report.                  */
 static Byte_t GenericMouseReport[] =
 {
-   0x02, 0x80, 0x50, 0x00 // 
+   0x02, 0x80, 0x50, 0x00 // Report: 2,
 } ;
 
    /* The following string table is used to map HCI Version information */
@@ -314,7 +318,6 @@ static char *IOCapabilitiesStrings[] =
 
 
    /* Internal function prototypes.                                     */
-static void DisplaySelectionMenu(void);
 static void DisplayHIDDeviceMenu(void);
 static void DisplayFunctionError(char *Function,int Status);
 static void PopulateHIDDeviceCommandTable(void);
@@ -384,14 +387,6 @@ static int HIDDeviceMode(ParameterList_t *TempParam);
    /* Callback Function Prototypes.                                     */
 static void BTPSAPI GAP_Event_Callback(unsigned int BluetoothStackID, GAP_Event_Data_t *GAPEventData, unsigned long CallbackParameter);
 static void BTPSAPI HID_Event_Callback(unsigned int BluetoothStackID, HID_Event_Data_t *HIDEventData, unsigned long CallbackParameter);
-
-   /* The following function displays the HID Role Command Menu.        */
-static void DisplaySelectionMenu(void)
-{
-   Display(("\r\n************************** Command Options **************************\r\n"));
-   Display(("* Command Options: Host, Device                                     *\r\n"));
-   Display(("*********************************************************************\r\n"));
-}
 
    /* The following function displays the HID Device Command Menu.      */
 static void DisplayHIDDeviceMenu(void)
@@ -506,8 +501,6 @@ static void UserInterface_Selection(void)
 {
    /* Set the Host mode to an invalid selection.                        */
    UI_Mode = UI_MODE_SELECT;
-   /* Next display the available commands.                              */
-   DisplaySelectionMenu();
 
    ClearCommands();
 
@@ -547,6 +540,8 @@ static Boolean_t CommandLineInterpreter(char *Command)
 
             if(HIDDeviceServerSDPHandle)
                SDP_Delete_Service_Record(BluetoothStackID, HIDDeviceServerSDPHandle);
+            if(DeviceIDSDPHandle)
+               SDP_Delete_Service_Record(BluetoothStackID, DeviceIDSDPHandle);
 
             /* Run the main user interface.                             */
             UserInterface_Selection();
@@ -970,7 +965,7 @@ static int DisplayHelp(ParameterList_t *TempParam)
       else
       {
          /* Currently in Selection Mode, display the Selection Menu.    */
-         DisplaySelectionMenu();
+          Display(("Error - In inaccessable mode"));
       }
    }
 
@@ -1194,6 +1189,8 @@ static int CloseStack(void)
 
       if(HIDDeviceServerSDPHandle)
          SDP_Delete_Service_Record(BluetoothStackID, HIDDeviceServerSDPHandle);
+      if(DeviceIDSDPHandle)
+         SDP_Delete_Service_Record(BluetoothStackID, DeviceIDSDPHandle);
 
       /* Simply close the Stack                                         */
       BSC_Shutdown(BluetoothStackID);
@@ -2495,6 +2492,43 @@ static int HIDRegisterDeviceServer(void)
          /* Now attempt to add the record.                              */
          Result = HID_Register_Device_SDP_Record(BluetoothStackID, (HID_NORMALLY_CONNECTABLE_BIT | HID_BATTERY_POWER_BIT), 0x0100, 0x0111, 0x80, 1, &Descriptor, "Stonestreet One Bluetooth Mouse", &HIDDeviceServerSDPHandle);
 
+         if (!Result)
+         {
+             SDP_UUID_Entry_t uuids[] =
+             {
+                 {
+                    .SDP_Data_Element_Type = deUUID_16,
+                    .UUID_Value.UUID_16.UUID_Byte0 = 0x12,
+                    .UUID_Value.UUID_16.UUID_Byte1 = 0x00
+                 }
+             };
+             DeviceIDSDPHandle = SDP_Create_Service_Record(BluetoothStackID, sizeof(uuids) / sizeof(SDP_UUID_Entry_t), uuids);
+             static SDP_Data_Element_t sdp_vid_element =
+             {
+                  .SDP_Data_Element_Type = deUnsignedInteger2Bytes,
+                  .SDP_Data_Element_Length = 2,
+                  .SDP_Data_Element.UnsignedInteger2Bytes = 0x4242
+             };
+             static SDP_Data_Element_t sdp_pid_element =
+             {
+                  .SDP_Data_Element_Type = deUnsignedInteger2Bytes,
+                  .SDP_Data_Element_Length = 2,
+                  .SDP_Data_Element.UnsignedInteger2Bytes = 0x4242
+             };
+             static SDP_Data_Element_t sdp_vid_src_element =
+             {
+                  .SDP_Data_Element_Type = deUnsignedInteger2Bytes,
+                  .SDP_Data_Element_Length = 2,
+                  .SDP_Data_Element.UnsignedInteger2Bytes = 0x0001
+             };
+             if (DeviceIDSDPHandle != 0)
+                 Result = SDP_Add_Attribute(BluetoothStackID, DeviceIDSDPHandle, 0x0201, &sdp_vid_element);
+             if (!Result)
+                 Result = SDP_Add_Attribute(BluetoothStackID, DeviceIDSDPHandle, 0x0202, &sdp_pid_element);
+             if (!Result)
+                 Result = SDP_Add_Attribute(BluetoothStackID, DeviceIDSDPHandle, 0x0205, &sdp_vid_src_element);
+         }
+
          /* Check the result of the above function call for success.    */
          if(!Result)
          {
@@ -2512,6 +2546,7 @@ static int HIDRegisterDeviceServer(void)
             Display(("HID_Register_Device_SDP_Record: Function Failure.\r\n"));
 
             HIDDeviceServerSDPHandle = 0;
+            DeviceIDSDPHandle = 0;
 
             /* Now try and unregister the registered server.            */
             Result = HID_Un_Register_Server(BluetoothStackID);
