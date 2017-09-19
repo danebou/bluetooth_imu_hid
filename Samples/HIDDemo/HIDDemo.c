@@ -107,7 +107,7 @@
                                                          /* Data Elements.    */
 
    /* Determine the Name we will use for this compilation.              */
-#define APP_DEMO_NAME                              "HIDDemo"
+#define APP_DEMO_NAME                              "IMU HeadTracking"
 
 
    /* The following represent the possible values of UI_Mode variable.  */
@@ -315,10 +315,8 @@ static char *IOCapabilitiesStrings[] =
 
    /* Internal function prototypes.                                     */
 static void DisplaySelectionMenu(void);
-static void DisplayHIDHostMenu(void);
 static void DisplayHIDDeviceMenu(void);
 static void DisplayFunctionError(char *Function,int Status);
-static void PopulateHIDHostCommandTable(void);
 static void PopulateHIDDeviceCommandTable(void);
 
 static void UserInterface_Main(void);
@@ -339,7 +337,6 @@ static void DisplayFWVersion(void);
 static int DisplayHelp(ParameterList_t *TempParam);
 static int QueryMemory(ParameterList_t *TempParam);
 
-static int InitializeHIDHost(void);
 static int InitializeHIDDevice(void);
 
 static int OpenStack(HCI_DriverInformation_t *HCI_DriverInformation, BTPS_Initialization_t *BTPS_Initialization);
@@ -368,29 +365,20 @@ static int SetClassOfDevice(ParameterList_t *TempParam);
 static int GetClassOfDevice(ParameterList_t *TempParam);
 static int GetRemoteName(ParameterList_t *TempParam);
 
-static int HIDRegisterHostServer(void);
 static int HIDRegisterDeviceServer(void);
 
-static int HIDConnectRemoteDevice(ParameterList_t *TempParam);
 static int HIDConnectRemoteHost(ParameterList_t *TempParam);
 static int HIDCloseConnection(ParameterList_t *TempParam);
 
 static int HIDControlRequest(ParameterList_t *TempParam);
-static int HIDGetReportRequest(ParameterList_t *TempParam);
 static int HIDGetReportResponse(ParameterList_t *TempParam);
-static int HIDSetReportRequest(ParameterList_t *TempParam);
 static int HIDSetReportResponse(ParameterList_t *TempParam);
-static int HIDGetProtocolRequest(ParameterList_t *TempParam);
 static int HIDGetProtocolResponse(ParameterList_t *TempParam);
-static int HIDSetProtocolRequest(ParameterList_t *TempParam);
 static int HIDSetProtocolResponse(ParameterList_t *TempParam);
-static int HIDGetIdleRequest(ParameterList_t *TempParam);
 static int HIDGetIdleResponse(ParameterList_t *TempParam);
-static int HIDSetIdleRequest(ParameterList_t *TempParam);
 static int HIDSetIdleResponse(ParameterList_t *TempParam);
 static int HIDDataWrite(ParameterList_t *TempParam);
 
-static int HIDHostMode(ParameterList_t *TempParam);
 static int HIDDeviceMode(ParameterList_t *TempParam);
 
    /* Callback Function Prototypes.                                     */
@@ -402,46 +390,6 @@ static void DisplaySelectionMenu(void)
 {
    Display(("\r\n************************** Command Options **************************\r\n"));
    Display(("* Command Options: Host, Device                                     *\r\n"));
-   Display(("*********************************************************************\r\n"));
-}
-
-   /* The following function displays the HID Host Command Menu.        */
-static void DisplayHIDHostMenu(void)
-{
-   /* First display the upper command bar.                              */
-   Display(("************************** Command Options **************************\r\n"));
-
-   /* Next, display all of the commands.                                */
-   Display(("*  Inquiry                                                          *\r\n"));
-   Display(("*  DisplayInquiryList                                               *\r\n"));
-   Display(("*  Pair [Inquiry Index] [Bonding Type]                              *\r\n"));
-   Display(("*  EndPairing [Inquiry Index]                                       *\r\n"));
-   Display(("*  PINCodeResponse [PIN Code]                                       *\r\n"));
-   Display(("*  PassKeyResponse [Numeric Passkey]                                *\r\n"));
-   Display(("*  UserConfirmationResponse [Confirmation Flag]                     *\r\n"));
-   Display(("*  SetDiscoverabilityMode [Discoverability Mode]                    *\r\n"));
-   Display(("*  SetConnectabilityMode [Connectability Mode]                      *\r\n"));
-   Display(("*  SetPairabilityMode [Pairability Mode]                            *\r\n"));
-   Display(("*  ChangeSimplePairingParameters [I/O Capabilities] [MITM Flag]     *\r\n"));
-   Display(("*  GetLocalAddress                                                  *\r\n"));
-   Display(("*  GetLocalName                                                     *\r\n"));
-   Display(("*  SetLocalName [Local Device Name (no spaces allowed)]             *\r\n"));
-   Display(("*  GetClassOfDevice                                                 *\r\n"));
-   Display(("*  SetClassOfDevice [Class of Device]                               *\r\n"));
-   Display(("*  GetRemoteName [Inquiry Index]                                    *\r\n"));
-   Display(("*  ConnectRemoteHIDDevice [Inquiry Index]                           *\r\n"));
-   Display(("*  CloseConnection                                                  *\r\n"));
-   Display(("*  ControlRequest [Control Operation]                               *\r\n"));
-   Display(("*  GetReportRequest [Size] [ReportType] [ReportID] [BufferSize]     *\r\n"));
-   Display(("*  SetReportRequest [ReportType]                                    *\r\n"));
-   Display(("*  GetProtocolRequest                                               *\r\n"));
-   Display(("*  SetProtocolRequest [Protocol]                                    *\r\n"));
-   Display(("*  GetIdleRequest                                                   *\r\n"));
-   Display(("*  SetIdleRequest [IdleRate]                                        *\r\n"));
-   Display(("*  DataWrite [ReportType]                                           *\r\n"));
-   Display(("*  Help                                                             *\r\n"));
-   Display(("*  Quit                                                             *\r\n"));
-
    Display(("*********************************************************************\r\n"));
 }
 
@@ -483,47 +431,6 @@ static void DisplayHIDDeviceMenu(void)
    Display(("*  Quit                                                             *\r\n"));
 
    Display(("*********************************************************************\r\n"));
-}
-
-   /* The following function Clears all commands currently in the       */
-   /* command table and populates it with the Commands that are         */
-   /* available for the HID Host.                                       */
-static void PopulateHIDHostCommandTable(void)
-{
-   /* First Clear all of the commands in the Command Table.             */
-   ClearCommands();
-
-   /* Now add all of the commands that are associated with the HID Host */
-   /* to the Command Table.                                             */
-   AddCommand("CONNECTREMOTEHIDDEVICE", HIDConnectRemoteDevice);
-   AddCommand("CLOSECONNECTION", HIDCloseConnection);
-   AddCommand("INQUIRY", Inquiry);
-   AddCommand("DISPLAYINQUIRYLIST", DisplayInquiryList);
-   AddCommand("PAIR", Pair);
-   AddCommand("ENDPAIRING", EndPairing);
-   AddCommand("PINCODERESPONSE", PINCodeResponse);
-   AddCommand("PASSKEYRESPONSE", PassKeyResponse);
-   AddCommand("USERCONFIRMATIONRESPONSE", UserConfirmationResponse);
-   AddCommand("SETDISCOVERABILITYMODE", SetDiscoverabilityMode);
-   AddCommand("SETCONNECTABILITYMODE", SetConnectabilityMode);
-   AddCommand("SETPAIRABILITYMODE", SetPairabilityMode);
-   AddCommand("CHANGESIMPLEPAIRINGPARAMETERS", ChangeSimplePairingParameters);
-   AddCommand("GETLOCALADDRESS", GetLocalAddress);
-   AddCommand("SETLOCALNAME", SetLocalName);
-   AddCommand("GETLOCALNAME", GetLocalName);
-   AddCommand("SETCLASSOFDEVICE", SetClassOfDevice);
-   AddCommand("GETCLASSOFDEVICE", GetClassOfDevice);
-   AddCommand("GETREMOTENAME", GetRemoteName);
-   AddCommand("CONTROLREQUEST", HIDControlRequest);
-   AddCommand("GETREPORTREQUEST", HIDGetReportRequest);
-   AddCommand("SETREPORTREQUEST", HIDSetReportRequest);
-   AddCommand("GETPROTOCOLREQUEST", HIDGetProtocolRequest);
-   AddCommand("SETPROTOCOLREQUEST", HIDSetProtocolRequest);
-   AddCommand("GETIDLEREQUEST", HIDGetIdleRequest);
-   AddCommand("SETIDLEREQUEST", HIDSetIdleRequest);
-   AddCommand("DATAWRITE", HIDDataWrite);
-   AddCommand("HELP", DisplayHelp);
-   AddCommand("QUERYMEMORY", QueryMemory);
 }
 
    /* The following function Clears all commands currently in the       */
@@ -582,9 +489,7 @@ static void UserInterface_Main(void)
    /* Determine if we are currently running in Host or Device mode.     */
    if(UI_Mode == UI_MODE_IS_CLIENT)
    {
-      /* We are currently running in Host mode, add the appropriate     */
-      /* commands to the command table and display the menu options.    */
-      PopulateHIDHostCommandTable();
+       Display(("Error - Invalid mode"));
    }
    else
    {
@@ -606,9 +511,7 @@ static void UserInterface_Selection(void)
 
    ClearCommands();
 
-   AddCommand("HOST", HIDHostMode);
-   AddCommand("DEVICE", HIDDeviceMode);
-   AddCommand("HELP", DisplayHelp);
+   HIDDeviceMode(NULL);
 }
 
    /* The following function is responsible for parsing user input      */
@@ -1055,7 +958,7 @@ static int DisplayHelp(ParameterList_t *TempParam)
    if(UI_Mode == UI_MODE_IS_CLIENT)
    {
       /* Currently in Host Mode, display the HID Host Menu.             */
-      DisplayHIDHostMenu();
+      Display(("Error - In inaccessable mode"));
    }
    else
    {
@@ -1072,24 +975,6 @@ static int DisplayHelp(ParameterList_t *TempParam)
    }
 
    return(0);
-}
-
-   /* The following function is responsible for setting the initial     */
-   /* state of the Main Application to be a HID Host.  This function    */
-   /* returns zero on successful execution and a negative value on all  */
-   /* errors.                                                           */
-static int InitializeHIDHost(void)
-{
-   int ret_val;
-
-   /* The device is now connectable and discoverable so open up a HID   */
-   /* Host Server.                                                      */
-   if(!HIDRegisterHostServer())
-      ret_val = 0;
-   else
-      ret_val = FUNCTION_ERROR;
-
-   return(ret_val);
 }
 
    /* Displays a function error message.                                */
@@ -2553,67 +2438,6 @@ static int GetRemoteName(ParameterList_t *TempParam)
    return(ret_val);
 }
 
-   /* The following function is responsible for opening a HID Host      */
-   /* Server.  This function returns zero on successful execution and a */
-   /* negative value on all errors.                                     */
-static int HIDRegisterHostServer(void)
-{
-   int                 Result;
-   HID_Configuration_t HIDConfiguration;
-
-   /* First check to see if a valid Bluetooth Stack ID exists.          */
-   if(BluetoothStackID)
-   {
-      /* The Bluetooth Stack ID appears to be at least semi-valid, next */
-      /* populate a HID Configuration structure.                        */
-      HIDConfiguration.InMTU                           = L2CAP_MAXIMUM_SUPPORTED_STACK_MTU;
-
-      HIDConfiguration.InFlow.MaxFlow.ServiceType      = 0x01;
-      HIDConfiguration.InFlow.MaxFlow.TokenRate        = 0x00;
-      HIDConfiguration.InFlow.MaxFlow.TokenBucketSize  = 0x00;
-      HIDConfiguration.InFlow.MaxFlow.PeakBandwidth    = 0x00;
-      HIDConfiguration.InFlow.MaxFlow.Latency          = 0xFFFFFFFF;
-      HIDConfiguration.InFlow.MaxFlow.DelayVariation   = 0xFFFFFFFF;
-
-      HIDConfiguration.OutFlow.MaxFlow.ServiceType     = 0x01;
-      HIDConfiguration.OutFlow.MaxFlow.TokenRate       = 0x00;
-      HIDConfiguration.OutFlow.MaxFlow.TokenBucketSize = 0x00;
-      HIDConfiguration.OutFlow.MaxFlow.PeakBandwidth   = 0x00;
-      HIDConfiguration.OutFlow.MaxFlow.Latency         = 0xFFFFFFFF;
-      HIDConfiguration.OutFlow.MaxFlow.DelayVariation  = 0xFFFFFFFF;
-
-      HIDConfiguration.OutFlow.MinFlow.ServiceType     = 0x01;
-      HIDConfiguration.OutFlow.MinFlow.TokenRate       = 0x00;
-      HIDConfiguration.OutFlow.MinFlow.TokenBucketSize = 0x00;
-      HIDConfiguration.OutFlow.MinFlow.PeakBandwidth   = 0x00;
-      HIDConfiguration.OutFlow.MinFlow.Latency         = 0xFFFFFFFF;
-      HIDConfiguration.OutFlow.MinFlow.DelayVariation  = 0xFFFFFFFF;
-
-      /* Now attempt to register a Bluetooth HID Host server.           */
-      Result = HID_Register_Host_Server(BluetoothStackID, &HIDConfiguration, HID_Event_Callback, 0);
-
-      if(!Result)
-      {
-         /* The server was successfully registered, set the Server      */
-         /* Registered flag to true.                                    */
-         Display(("HID_Register_Host_Server: Function Successful.\r\n"));
-      }
-      else
-      {
-         /* An error occurred while attempting to register the server.  */
-         /* Display an error message indicating the error.              */
-         Display(("HID_Register_Host_Server: Function Failure: %d.\r\n", Result));
-      }
-   }
-   else
-   {
-      /* No valid Bluetooth Stack ID exists.                            */
-      Result = INVALID_STACK_ID_ERROR;
-   }
-
-   return(Result);
-}
-
    /* The following function is responsible for opening a HID Device    */
    /* Server and Registering the associated SDP Record.  This function  */
    /* returns zero on successful execution and a negative value on all  */
@@ -2722,104 +2546,6 @@ static int HIDRegisterDeviceServer(void)
    }
 
    return(Result);
-}
-
-   /* The following function is responsible for Connecting to a Remote  */
-   /* HID Device.  This function returns zero on successful execution   */
-   /* and a negative value on all errors.                               */
-static int HIDConnectRemoteDevice(ParameterList_t *TempParam)
-{
-   int                 ret_val;
-   char                BoardStr[16];
-   BD_ADDR_t           NullADDR;
-   HID_Configuration_t HIDConfiguration;
-
-   ASSIGN_BD_ADDR(NullADDR, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
-
-   /* First, check that valid Bluetooth Stack ID exists.                */
-   if(BluetoothStackID)
-   {
-      /* Now check to make sure that an on going connection doesn't     */
-      /* already exist.                                                 */
-      if(!HIDID)
-      {
-         /* There are currently no ongoing connections, now check to    */
-         /* make sure that the parameters required for this function    */
-         /* appear to be valid.                                         */
-         if((TempParam) && (TempParam->NumberofParameters > 0) && (TempParam->Params->intParam) && (NumberofValidResponses) && (TempParam->Params->intParam<=NumberofValidResponses) && (!COMPARE_BD_ADDR(InquiryResultList[(TempParam->Params->intParam-1)], NullADDR)))
-         {
-            /* The above parameters are valid, inform the that the      */
-            /* program is about to Attempt to connect to a remote HID   */
-            /* Device.                                                  */
-            BD_ADDRToStr(InquiryResultList[(TempParam->Params->intParam-1)], BoardStr);
-            Display(("Open Remote HID Device(BD_ADDR = %s)\r\n", BoardStr));
-
-            /* Populate a HID Configuration structure.                  */
-            HIDConfiguration.InMTU                           = L2CAP_MAXIMUM_SUPPORTED_STACK_MTU;
-
-            HIDConfiguration.InFlow.MaxFlow.ServiceType      = 0x01;
-            HIDConfiguration.InFlow.MaxFlow.TokenRate        = 0x00;
-            HIDConfiguration.InFlow.MaxFlow.TokenBucketSize  = 0x00;
-            HIDConfiguration.InFlow.MaxFlow.PeakBandwidth    = 0x00;
-            HIDConfiguration.InFlow.MaxFlow.Latency          = 0xFFFFFFFF;
-            HIDConfiguration.InFlow.MaxFlow.DelayVariation   = 0xFFFFFFFF;
-
-            HIDConfiguration.OutFlow.MaxFlow.ServiceType     = 0x01;
-            HIDConfiguration.OutFlow.MaxFlow.TokenRate       = 0x00;
-            HIDConfiguration.OutFlow.MaxFlow.TokenBucketSize = 0x00;
-            HIDConfiguration.OutFlow.MaxFlow.PeakBandwidth   = 0x00;
-            HIDConfiguration.OutFlow.MaxFlow.Latency         = 0xFFFFFFFF;
-            HIDConfiguration.OutFlow.MaxFlow.DelayVariation  = 0xFFFFFFFF;
-
-            HIDConfiguration.OutFlow.MinFlow.ServiceType     = 0x01;
-            HIDConfiguration.OutFlow.MinFlow.TokenRate       = 0x00;
-            HIDConfiguration.OutFlow.MinFlow.TokenBucketSize = 0x00;
-            HIDConfiguration.OutFlow.MinFlow.PeakBandwidth   = 0x00;
-            HIDConfiguration.OutFlow.MinFlow.Latency         = 0xFFFFFFFF;
-            HIDConfiguration.OutFlow.MinFlow.DelayVariation  = 0xFFFFFFFF;
-
-            ret_val = HID_Connect_Remote_Device(BluetoothStackID, InquiryResultList[(TempParam->Params->intParam-1)], &HIDConfiguration, HID_Event_Callback, 0);
-
-            /* Now check to see if the function call was successfully   */
-            /* made.                                                    */
-            if(ret_val > 0)
-            {
-               /* The Connect Request was successfully submitted.       */
-               Display(("HID_Connect_Remote_Device: Function Successful (ID = %04X).\r\n", ret_val));
-
-               HIDID   = ret_val;
-               ret_val = 0;
-            }
-            else
-            {
-               /* There was an error submitting the connection request. */
-               Display(("HID_Connect_Remote_Device: Function Failure: %d.\r\n", ret_val));
-            }
-         }
-         else
-         {
-            /* One or more of the necessary parameters is/are invalid.  */
-            Display(("Usage: ConnectRemoteHIDDevice [Inquiry Index].\r\n"));
-
-            ret_val = INVALID_PARAMETERS_ERROR;
-         }
-      }
-      else
-      {
-         /* An Ongoing Connection already exists, this program only     */
-         /* supports one connection at a time.                          */
-         Display(("Ongoing connection already exists.\r\n"));
-
-         ret_val = FUNCTION_ERROR;
-      }
-   }
-   else
-   {
-      /* No valid Bluetooth Stack ID exists.                            */
-      ret_val = INVALID_STACK_ID_ERROR;
-   }
-
-   return(ret_val);
 }
 
    /* The following function is responsible for Connecting to a Remote  */
@@ -3037,68 +2763,6 @@ static int HIDControlRequest(ParameterList_t *TempParam)
    return(ret_val);
 }
 
-   /* The following function is responsible for sending a GET_REPORT    */
-   /* Transaction to the remote HID Device.  This function returns zero */
-   /* on successful execution and a negative value on all errors.       */
-static int HIDGetReportRequest(ParameterList_t *TempParam)
-{
-   int ret_val;
-
-   /* First, check that valid Bluetooth Stack ID exists.                */
-   if(BluetoothStackID)
-   {
-      /* Check to see if the Current HIDID appears to be semi-valid.    */
-      /* This parameter will only be valid if a Client Connection       */
-      /* Exists.                                                        */
-      if(HIDID)
-      {
-         /* The HIDID appears to be at least semi-valid, now check to   */
-         /* make sure that the parameters required for this function    */
-         /* appear to be valid.                                         */
-         if((TempParam) && (TempParam->NumberofParameters > 2) && (TempParam->Params[0].intParam >= grSizeOfReport) && (TempParam->Params[0].intParam <= grUseBufferSize) && (TempParam->Params[1].intParam >= rtInput) && (TempParam->Params[1].intParam <= rtFeature))
-         {
-            /* The parameters appear to be at least semi-valid, now     */
-            /* attempt to submit the HID Get Report request.            */
-            ret_val = HID_Get_Report_Request(BluetoothStackID, HIDID, (HID_Get_Report_Size_Type_t)TempParam->Params[0].intParam, (HID_Report_Type_Type_t)TempParam->Params[1].intParam, (Byte_t)(TempParam->Params[2].intParam), (Word_t)(TempParam->Params[3].intParam));
-
-            /* Check to see if the command was successfully submitted.  */
-            if(!ret_val)
-            {
-               /* The command was successfully submitted.  Display a    */
-               /* message indicating that HID Get Report Request was    */
-               /* successfully submitted.                               */
-               Display(("HID_Get_Report_Request: Function Successful.\r\n"));
-            }
-            else
-            {
-               /* An error occurred while attempting to submit the HID  */
-               /* Get Report Request command.                           */
-               Display(("HID_Get_Report_Request: Function Failure: %d.\r\n", ret_val));
-            }
-         }
-         else
-         {
-            /* The required parameter is invalid.                       */
-            Display(("Usage: GetReportRequest [Size (0 = grSizeOfReport, 1 = grUseBufferSize)] [ReportType (0 = rtOther, 1 = rtInput, 2 = rtOutput, 3 = rtFeature)] [ReportID] [BufferSize].\r\n"));
-            ret_val = INVALID_PARAMETERS_ERROR;
-         }
-      }
-      else
-      {
-         /* The HID ID is invalid.                                      */
-         Display(("HID Get Report Request: Invalid HIDID.\r\n"));
-         ret_val = FUNCTION_ERROR;
-      }
-   }
-   else
-   {
-      /* No valid Bluetooth Stack ID exists.                            */
-      ret_val = INVALID_STACK_ID_ERROR;
-   }
-
-   return(ret_val);
-}
-
    /* The following function is responsible for sending a response for  */
    /* an outstanding GET_REPORT Transaction to the remote HID Host.     */
    /* This function returns zero on successful execution and a negative */
@@ -3150,70 +2814,6 @@ static int HIDGetReportResponse(ParameterList_t *TempParam)
       {
          /* The HID ID is invalid.                                      */
          Display(("HID Get Report Response: Invalid HIDID.\r\n"));
-         ret_val = FUNCTION_ERROR;
-      }
-   }
-   else
-   {
-      /* No valid Bluetooth Stack ID exists.                            */
-      ret_val = INVALID_STACK_ID_ERROR;
-   }
-
-   return(ret_val);
-}
-
-   /* The following function is responsible for sending a SET_REPORT    */
-   /* Transaction to the remote HID Device.  This function returns zero */
-   /* on successful execution and a negative value on all errors.       */
-static int HIDSetReportRequest(ParameterList_t *TempParam)
-{
-   int ret_val;
-
-   /* First, check that valid Bluetooth Stack ID exists.                */
-   if(BluetoothStackID)
-   {
-      /* Check to see if the Current HIDID appears to be semi-valid.    */
-      /* This parameter will only be valid if a Client Connection       */
-      /* Exists.                                                        */
-      if(HIDID)
-      {
-         /* The HIDID appears to be at least semi-valid, now check to   */
-         /* make sure that the parameters required for this function    */
-         /* appear to be valid.                                         */
-         if((TempParam) && (TempParam->NumberofParameters > 0) && (TempParam->Params[0].intParam >= rtInput) && (TempParam->Params[0].intParam <= rtFeature))
-         {
-            /* The parameters appear to be at least semi-valid, now     */
-            /* attempt to submit the HID Set Report request.            */
-            ret_val = HID_Set_Report_Request(BluetoothStackID, HIDID, (HID_Report_Type_Type_t)TempParam->Params[0].intParam, sizeof(GenericMouseReport), GenericMouseReport);
-
-            /* Check to see if the command was successfully submitted.  */
-            if(!ret_val)
-            {
-               /* The command was successfully submitted.  Display a    */
-               /* message indicating that HID Set Report Request was    */
-               /* successfully submitted.                               */
-               Display(("HID_Set_Report_Request: Function Successful.\r\n"));
-            }
-            else
-            {
-               /* An error occurred while attempting to submit the HID  */
-               /* Set Report Request command.                           */
-               Display(("HID_Set_Report_Request: Function Failure: %d.\r\n", ret_val));
-            }
-         }
-         else
-         {
-            /* The required parameter is invalid.                       */
-            Display(("Usage: SetReportRequest [ReportType].\r\n"));
-
-            ret_val = INVALID_PARAMETERS_ERROR;
-         }
-      }
-      else
-      {
-         /* The HID ID is invalid.                                      */
-         Display(("HID Set Report Request: Invalid HIDID.\r\n"));
-
          ret_val = FUNCTION_ERROR;
       }
    }
@@ -3291,57 +2891,6 @@ static int HIDSetReportResponse(ParameterList_t *TempParam)
    return(ret_val);
 }
 
-   /* The following function is responsible for sending a GET_PROTOCOL  */
-   /* Transaction to the remote HID Device.  This function returns zero */
-   /* on successful execution and a negative value on all errors.       */
-static int HIDGetProtocolRequest(ParameterList_t *TempParam)
-{
-   int ret_val;
-
-   /* First, check that valid Bluetooth Stack ID exists.                */
-   if(BluetoothStackID)
-   {
-      /* Check to see if the Current HIDID appears to be semi-valid.    */
-      /* This parameter will only be valid if a Client Connection       */
-      /* Exists.                                                        */
-      if(HIDID)
-      {
-         /* The HIDID appears to be at least semi-valid, now attempt to */
-         /* submit the HID Get Protocol request.                        */
-         ret_val = HID_Get_Protocol_Request(BluetoothStackID, HIDID);
-
-         /* Check to see if the command was successfully submitted.     */
-         if(!ret_val)
-         {
-            /* The command was successfully submitted.  Display a       */
-            /* message indicating that HID Get Protocol Request was     */
-            /* successfully submitted.                                  */
-            Display(("HID_Get_Protocol_Request: Function Successful.\r\n"));
-         }
-         else
-         {
-            /* An error occurred while attempting to submit the HID Get */
-            /* Protocol Request command.                                */
-            Display(("HID_Get_Protocol_Request: Function Failure: %d.\r\n", ret_val));
-         }
-      }
-      else
-      {
-         /* The HID ID is invalid.                                      */
-         Display(("HID Get Protocol Request: Invalid HIDID.\r\n"));
-
-         ret_val = FUNCTION_ERROR;
-      }
-   }
-   else
-   {
-      /* No valid Bluetooth Stack ID exists.                            */
-      ret_val = INVALID_STACK_ID_ERROR;
-   }
-
-   return(ret_val);
-}
-
    /* The following function is responsible for sending a response for  */
    /* an outstanding GET_PROTOCOL Transaction to the remote HID Host.   */
    /* This function returns zero on successful execution and a negative */
@@ -3394,69 +2943,6 @@ static int HIDGetProtocolResponse(ParameterList_t *TempParam)
       {
          /* The HID ID is invalid.                                      */
          Display(("HID Get Protocol Response: Invalid HIDID.\r\n"));
-         ret_val = FUNCTION_ERROR;
-      }
-   }
-   else
-   {
-      /* No valid Bluetooth Stack ID exists.                            */
-      ret_val = INVALID_STACK_ID_ERROR;
-   }
-
-   return(ret_val);
-}
-
-   /* The following function is responsible for sending a SET_PROTOCOL  */
-   /* Transaction to the remote HID Device.  This function returns zero */
-   /* on successful execution and a negative value on all errors.       */
-static int HIDSetProtocolRequest(ParameterList_t *TempParam)
-{
-   int ret_val;
-
-   /* First, check that valid Bluetooth Stack ID exists.                */
-   if(BluetoothStackID)
-   {
-      /* Check to see if the Current HIDID appears to be semi-valid.    */
-      /* This parameter will only be valid if a Client Connection       */
-      /* Exists.                                                        */
-      if(HIDID)
-      {
-         /* The HIDID appears to be at least semi-valid, now check to   */
-         /* make sure that the parameters required for this function    */
-         /* appear to be valid.                                         */
-         if((TempParam) && (TempParam->NumberofParameters > 0) && (TempParam->Params[0].intParam >= ptBoot) && (TempParam->Params[0].intParam <= ptReport))
-         {
-            /* The parameter appears to be at least semi-valid, now     */
-            /* attempt to submit the HID Set Protocol request.          */
-            ret_val = HID_Set_Protocol_Request(BluetoothStackID, HIDID, (HID_Protocol_Type_t)TempParam->Params[0].intParam);
-
-            /* Check to see if the command was successfully submitted.  */
-            if(!ret_val)
-            {
-               /* The command was successfully submitted.  Display a    */
-               /* message indicating that HID Set Protocol Request was  */
-               /* successfully submitted.                               */
-               Display(("HID_Set_Protocol_Request: Function Successful.\r\n"));
-            }
-            else
-            {
-               /* An error occurred while attempting to submit the HID  */
-               /* Set Protocol Request command.                         */
-               Display(("HID_Set_Protocol_Request: Function Failure: %d.\r\n", ret_val));
-            }
-         }
-         else
-         {
-            /* The required parameter is invalid.                       */
-            Display(("Usage: SetProtocolRequest [Protocol].\r\n"));
-
-            ret_val = INVALID_PARAMETERS_ERROR;
-         }
-      }
-      else
-      {
-         /* The HID ID is invalid.                                      */
-         Display(("HID Set Protocol Request: Invalid HIDID.\r\n"));
          ret_val = FUNCTION_ERROR;
       }
    }
@@ -3532,56 +3018,6 @@ static int HIDSetProtocolResponse(ParameterList_t *TempParam)
    return(ret_val);
 }
 
-   /* The following function is responsible for sending a GET_IDLE      */
-   /* Transaction to the remote HID Device.  This function returns zero */
-   /* on successful execution and a negative value on all errors.       */
-static int HIDGetIdleRequest(ParameterList_t *TempParam)
-{
-   int ret_val;
-
-   /* First, check that valid Bluetooth Stack ID exists.                */
-   if(BluetoothStackID)
-   {
-      /* Check to see if the Current HIDID appears to be semi-valid.    */
-      /* This parameter will only be valid if a Client Connection       */
-      /* Exists.                                                        */
-      if(HIDID)
-      {
-         /* The HIDID appears to be at least semi-valid, now attempt to */
-         /* submit the HID Get Idle request.                            */
-         ret_val = HID_Get_Idle_Request(BluetoothStackID, HIDID);
-
-         /* Check to see if the command was successfully submitted.     */
-         if(!ret_val)
-         {
-            /* The command was successfully submitted.  Display a       */
-            /* message indicating that HID Get Idle Request was         */
-            /* successfully submitted.                                  */
-            Display(("HID_Get_Idle_Request: Function Successful.\r\n"));
-         }
-         else
-         {
-            /* An error occurred while attempting to submit the HID Get */
-            /* Idle Request command.                                    */
-            Display(("HID_Get_Idle_Request: Function Failure: %d.\r\n", ret_val));
-         }
-      }
-      else
-      {
-         /* The HID ID is invalid.                                      */
-         Display(("HID Get Idle Request: Invalid HIDID.\r\n"));
-         ret_val = FUNCTION_ERROR;
-      }
-   }
-   else
-   {
-      /* No valid Bluetooth Stack ID exists.                            */
-      ret_val = INVALID_STACK_ID_ERROR;
-   }
-
-   return(ret_val);
-}
-
    /* The following function is responsible for sending a response for  */
    /* an outstanding GET_IDLE Transaction to the remote HID Host.  This */
    /* function returns zero on successful execution and a negative value*/
@@ -3634,68 +3070,6 @@ static int HIDGetIdleResponse(ParameterList_t *TempParam)
       {
          /* The HID ID is invalid.                                      */
          Display(("HID Get Idle Response: Invalid HIDID.\r\n"));
-         ret_val = FUNCTION_ERROR;
-      }
-   }
-   else
-   {
-      /* No valid Bluetooth Stack ID exists.                            */
-      ret_val = INVALID_STACK_ID_ERROR;
-   }
-
-   return(ret_val);
-}
-
-   /* The following function is responsible for sending a SET_IDLE      */
-   /* Transaction to the remote HID Device.  This function returns zero */
-   /* on successful execution and a negative value on all errors.       */
-static int HIDSetIdleRequest(ParameterList_t *TempParam)
-{
-   int ret_val;
-
-   /* First, check that valid Bluetooth Stack ID exists.                */
-   if(BluetoothStackID)
-   {
-      /* Check to see if the Current HIDID appears to be semi-valid.    */
-      /* This parameter will only be valid if a Client Connection       */
-      /* Exists.                                                        */
-      if(HIDID)
-      {
-         /* The HIDID appears to be at least semi-valid, now check to   */
-         /* make sure that the parameters required for this function    */
-         /* appear to be valid.                                         */
-         if((TempParam) && (TempParam->NumberofParameters > 0))
-         {
-            /* The parameter appears to be at least semi-valid, now     */
-            /* attempt to submit the HID Set Idle request.              */
-            ret_val = HID_Set_Idle_Request(BluetoothStackID, HIDID, (Byte_t)TempParam->Params[0].intParam);
-
-            /* Check to see if the command was successfully submitted.  */
-            if(!ret_val)
-            {
-               /* The command was successfully submitted.  Display a    */
-               /* message indicating that HID Set Idle Request was      */
-               /* successfully submitted.                               */
-               Display(("HID_Set_Idle_Request: Function Successful.\r\n"));
-            }
-            else
-            {
-               /* An error occurred while attempting to submit the HID  */
-               /* Set Idle Request command.                             */
-               Display(("HID_Set_Idle_Request: Function Failure: %d.\r\n", ret_val));
-            }
-         }
-         else
-         {
-            /* The required parameter is invalid.                       */
-            Display(("Usage: SetIdleRequest [IdleRate].\r\n"));
-            ret_val = INVALID_PARAMETERS_ERROR;
-         }
-      }
-      else
-      {
-         /* The HID ID is invalid.                                      */
-         Display(("HID Set Idle Request: Invalid HIDID.\r\n"));
          ret_val = FUNCTION_ERROR;
       }
    }
@@ -3838,22 +3212,8 @@ static int HIDDataWrite(ParameterList_t *TempParam)
    return(ret_val);
 }
 
-   /* The following function is responsible for changing the User       */
-   /* Interface Mode to HID Host.                                       */
-static int HIDHostMode(ParameterList_t *TempParam)
-{
-   UI_Mode = UI_MODE_IS_CLIENT;
-
-   if(!InitializeHIDHost())
-      UserInterface_Main();
-   else
-      CloseStack();
-
-   return(0);
-}
-
-   /* The following function is responsible for changing the User       */
-   /* Interface Mode to HID Device.                                     */
+/* The following function is responsible for changing the User       */
+/* Interface Mode to HID Device.                                     */
 static int HIDDeviceMode(ParameterList_t *TempParam)
 {
    UI_Mode = UI_MODE_IS_SERVER;
